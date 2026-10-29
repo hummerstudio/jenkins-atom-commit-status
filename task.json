@@ -1,0 +1,87 @@
+{
+  "atomCode": "commit-status",
+  "name": "Commit status",
+  "version": "1.0.0",
+  "description": "Posts the build state back to the commit on GitHub, GitLab or Gitea.",
+  "execution": {
+    "packagePath": "commit-status.jar",
+    "language": "java",
+    "target": "$atom_java_path -cp commit-status.jar com.jenkinschina.atom.sdk.AtomRunner"
+  },
+  "input": {
+    "provider": {
+      "label": "平台",
+      "type": "selector",
+      "default": "github",
+      "options": [
+        "github",
+        "gitlab",
+        "gitea"
+      ]
+    },
+    "repo": {
+      "label": "仓库（owner/name 或 group/project）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "sha": {
+      "label": "提交 sha（留空取 GIT_COMMIT）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "state": {
+      "label": "状态（留空按 BUILD_STATUS 推断）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "contextName": {
+      "label": "状态名",
+      "type": "vuex-input",
+      "default": "jenkins/atom"
+    },
+    "description": {
+      "label": "描述（留空自动生成）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "targetUrl": {
+      "label": "详情链接（留空取 BUILD_URL）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "apiUrl": {
+      "label": "API 地址（gitea 必填）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "token": {
+      "label": "Token（凭据 id，Secret text）",
+      "type": "vuex-input",
+      "default": "",
+      "isSensitive": true
+    }
+  },
+  "output": {
+    "status": {
+      "type": "string",
+      "description": "HTTP 状态码"
+    },
+    "state": {
+      "type": "string",
+      "description": "映射后的状态"
+    },
+    "apiUrl": {
+      "type": "string",
+      "description": "实际调用的地址"
+    }
+  },
+  "x-jenkins": {
+    "protocol": "jenkins-1",
+    "requires": {
+      "runner": ">=0.4.0"
+    },
+    "secrets": {
+      "token": ""
+    }
+  }
+}

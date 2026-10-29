@@ -1,0 +1,11 @@
+{
+  "name": "Commit status",
+  "summary": "Posts the build state back to the commit on GitHub, GitLab or Gitea.",
+  "author": "hummerstudio",
+  "license": "MIT",
+  "tags": [
+    "official-port",
+    "commit-status"
+  ],
+  "homepage": "https://github.com/hummerstudio/jenkins-atom-commit-status"
+}
