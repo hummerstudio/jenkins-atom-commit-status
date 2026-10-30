@@ -9,8 +9,12 @@
 set -uo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ATOM_CODE="$(basename "$repo")"
-ATOM_CODE="${ATOM_CODE#jenkins-atom-}"
+# the atom's own name, not the directory's: a git worktree is called after its branch
+ATOM_CODE="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['atomCode'])" "$repo/task.json" 2>/dev/null)"
+if [ -z "$ATOM_CODE" ]; then
+  ATOM_CODE="$(basename "$repo")"
+  ATOM_CODE="${ATOM_CODE#jenkins-atom-}"
+fi
 JAR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../dist/$ATOM_CODE" && pwd)/$ATOM_CODE.jar"
 JAVA_BIN="${JAVA_HOME:+$JAVA_HOME/bin/}java"
 
