@@ -1,8 +1,8 @@
 {
   "atomCode": "commit-status",
   "name": "Commit status",
-  "version": "1.0.0",
-  "description": "Posts the build state back to the commit on GitHub, GitLab or Gitea.",
+  "version": "1.1.0",
+  "description": "Posts the build state back to the commit on GitHub, GitLab or Gitea; on GitHub it does what the githubNotify step does (check credential / repository / commit first, report on the sha the API returns) and can also comment on a pull request.",
   "execution": {
     "packagePath": "commit-status.jar",
     "language": "java",
@@ -19,8 +19,13 @@
         "gitea"
       ]
     },
+    "account": {
+      "label": "账号 / 组织（GitHub 必填；repo 写成 owner/name 时可留空）",
+      "type": "vuex-input",
+      "default": ""
+    },
     "repo": {
-      "label": "仓库（owner/name 或 group/project）",
+      "label": "仓库名（或 owner/name；留空取 GIT_URL）",
       "type": "vuex-input",
       "default": ""
     },
@@ -59,6 +64,26 @@
       "type": "vuex-input",
       "default": "",
       "isSensitive": true
+    },
+    "preflight": {
+      "label": "写之前先核对凭据 / 仓库 / 提交（GitHub、Gitea）",
+      "type": "boolean",
+      "default": "true"
+    },
+    "verifyStatus": {
+      "label": "核对接口回显的状态（不是看状态码）",
+      "type": "boolean",
+      "default": "true"
+    },
+    "prNumber": {
+      "label": "PR 编号（留空取 CHANGE_ID）",
+      "type": "vuex-input",
+      "default": ""
+    },
+    "prComment": {
+      "label": "PR 评论正文（可选，支持 ${VAR}；插件没有这个功能）",
+      "type": "vuex-input",
+      "default": ""
     }
   },
   "output": {
@@ -70,9 +95,21 @@
       "type": "string",
       "description": "映射后的状态"
     },
+    "sha": {
+      "type": "string",
+      "description": "实际写状态的提交 sha（可能是接口给出的完整 sha）"
+    },
+    "verified": {
+      "type": "string",
+      "description": "接口回显的状态；未开启校验为 not-checked"
+    },
     "apiUrl": {
       "type": "string",
       "description": "实际调用的地址"
+    },
+    "commentId": {
+      "type": "string",
+      "description": "回读到的 PR 评论 id"
     }
   },
   "x-jenkins": {
