@@ -27,5 +27,5 @@ jobs:
         run: ./tools/smoke.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: commit-status-atom
-          path: dist/commit-status/
+          name: github-atom
+          path: dist/github/

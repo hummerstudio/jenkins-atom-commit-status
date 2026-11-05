@@ -1,12 +1,12 @@
 {
-  "atomCode": "commit-status",
+  "atomCode": "github",
   "name": "Commit status",
   "version": "1.1.0",
   "description": "Posts the build state back to the commit on GitHub, GitLab or Gitea; on GitHub it does what the githubNotify step does (check credential / repository / commit first, report on the sha the API returns) and can also comment on a pull request.",
   "execution": {
-    "packagePath": "commit-status.jar",
+    "packagePath": "github.jar",
     "language": "java",
-    "target": "$atom_java_path -cp commit-status.jar com.jenkinschina.atom.sdk.AtomRunner"
+    "target": "$atom_java_path -cp github.jar com.jenkinschina.atom.sdk.AtomRunner"
   },
   "input": {
     "provider": {

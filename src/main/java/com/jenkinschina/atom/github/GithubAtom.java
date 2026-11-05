@@ -1,4 +1,4 @@
-package com.jenkinschina.atom.commitstatus;
+package com.jenkinschina.atom.github;
 
 import com.jenkinschina.atom.sdk.AtomContext;
 import com.jenkinschina.atom.sdk.AtomResult;
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * it writes anything, and it writes the status on the <em>commit sha the API returned</em>, not on the string it was
  * given. A status write is also checked against the object the API echoes back, because a proxy can answer 201.
  */
-public class CommitStatusAtom implements AtomTask {
+public class GithubAtom implements AtomTask {
 
     private static final Pattern VAR = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_.]*)}");
 
@@ -141,7 +141,7 @@ public class CommitStatusAtom implements AtomTask {
             if (canonical != null && canonical.matches("[0-9a-fA-F]{7,64}")) {
                 postedSha = canonical;
                 if (!canonical.equalsIgnoreCase(sha)) {
-                    context.log("[commit-status] " + sha + " resolved to " + canonical);
+                    context.log("[github] " + sha + " resolved to " + canonical);
                 }
             }
         }
@@ -175,7 +175,7 @@ public class CommitStatusAtom implements AtomTask {
                     .header("Content-Type", "application/json");
         }
 
-        context.log("[commit-status] " + provider + " " + fullRepo + "@"
+        context.log("[github] " + provider + " " + fullRepo + "@"
                 + postedSha.substring(0, Math.min(7, postedSha.length())) + " -> " + mapped);
         Resp response;
         try {
@@ -271,7 +271,7 @@ public class CommitStatusAtom implements AtomTask {
                         "the API answered " + posted.code + " but the pull request " + prNumber
                                 + " does not list this comment; it was not stored as written");
             }
-            context.log("[commit-status] comment on PR #" + prNumber + " is id " + commentId);
+            context.log("[github] comment on PR #" + prNumber + " is id " + commentId);
             result.data("commentId", commentId);
         }
         return result;

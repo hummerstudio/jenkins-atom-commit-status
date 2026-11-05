@@ -35,9 +35,9 @@ mkdir -p "$classes/META-INF/services"
 cp src/main/resources/META-INF/services/* "$classes/META-INF/services/"
 ( cd "$sdk" && "$JAR" xf "$SDK_JAR" && rm -rf META-INF/MANIFEST.MF META-INF/services )
 
-rm -rf dist/commit-status
-mkdir -p dist/commit-status
-"$JAR" --create --file dist/commit-status/commit-status.jar -C "$classes" . -C "$sdk" .
-cp task.json dist/commit-status/
-[ -f meta.json ] && cp meta.json dist/commit-status/
-echo "built dist/commit-status: $(ls dist/commit-status | tr '\n' ' ')"
+rm -rf dist/github
+mkdir -p dist/github
+"$JAR" --create --file dist/github/github.jar -C "$classes" . -C "$sdk" .
+cp task.json dist/github/
+[ -f meta.json ] && cp meta.json dist/github/
+echo "built dist/github: $(ls dist/github | tr '\n' ' ')"

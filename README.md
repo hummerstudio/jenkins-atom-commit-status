@@ -1,4 +1,4 @@
-# jenkins-atom-commit-status
+# jenkins-atom-github
 
 Commit status -- port of **github / gitlab-plugin** (198,332) as an atom, plus the behaviour of
 **pipeline-githubnotify-step** (4,258, the `githubNotify` step) for GitHub.

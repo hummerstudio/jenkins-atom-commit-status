@@ -5,7 +5,7 @@
   "license": "MIT",
   "tags": [
     "official-port",
-    "commit-status"
+    "github"
   ],
-  "homepage": "https://github.com/hummerstudio/jenkins-atom-commit-status"
+  "homepage": "https://github.com/hummerstudio/jenkins-atom-github"
 }
