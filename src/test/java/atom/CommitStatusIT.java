@@ -65,6 +65,67 @@ class CommitStatusIT {
         scratch.clear();
     }
 
+
+    // ------------------------------------------------------------------ build state vocabulary and GIT_URL forms
+
+    @Test
+    @DisplayName("the build state vocabulary maps per provider: ABORTED -> error on GitHub, canceled on GitLab")
+    void buildStatesMapPerProvider() throws Exception {
+        Api api = api();
+        AtomResult aborted = github(api, "acme", "parcel", "abcdef1")
+                .input("BUILD_STATUS", "ABORTED")
+                .run();
+        aborted.assertOk();
+        assertJson(find(api.requests(), "POST", "/repos/acme/parcel/statuses/" + CANONICAL), "state", "error");
+
+        AtomResult pending = github(api, "acme", "parcel", "abcdef1")
+                .input("BUILD_STATUS", "BUILDING")
+                .run();
+        pending.assertOk();
+        assertEquals("pending", pending.field("state"), () -> pending.toString());
+    }
+
+    @Test
+    @DisplayName("GIT_URL is understood in its ssh and https spellings, with or without a user")
+    void infersFromEveryGitUrlSpelling() throws Exception {
+        for (String url : new String[] {
+                "git@github.com:acme/parcel.git",
+                "ssh://git@github.com/acme/parcel.git",
+                "https://github.com/acme/parcel.git",
+                "https://token@github.com/acme/parcel.git"}) {
+            Api api = api();
+            AtomResult run = base(api, "good-token")
+                    .input("provider", "github")
+                    .input("sha", "abcdef1")
+                    .input("GIT_URL", url)
+                    .run();
+            run.assertOk();
+            List<String> made = labels(api.requests());
+            assertEquals(List.of("GET /user", "GET /repos/acme/parcel", "GET /repos/acme/parcel/commits/abcdef1",
+                    "POST /repos/acme/parcel/statuses/" + CANONICAL), made, url + " was not understood: " + made);
+        }
+    }
+
+    @Test
+    @DisplayName("a provider this atom does not know falls back to the GitHub shape, not to a silent no-op")
+    void unknownProviderFallsBackToGithub() throws Exception {
+        Api api = api();
+        AtomResult run = base(api, "good-token")
+                .input("provider", "mercurial")
+                .input("account", "acme")
+                .input("repo", "parcel")
+                .input("sha", "abcdef1")
+                .run();
+
+        run.assertOk();
+        List<String> made = labels(api.requests());
+        // no preflight and no sha resolution: only GitHub has those, and this provider is not GitHub
+        assertEquals(List.of("POST /repos/acme/parcel/statuses/abcdef1"), made, "unknown provider: " + made);
+        assertEquals("Bearer good-token", find(api.requests(), "POST",
+                "/repos/acme/parcel/statuses/abcdef1").auth());
+        assertEquals("failure", run.field("state"), "the UNSTABLE environment still maps to failure");
+    }
+
     // ------------------------------------------------------------------ 1: the githubNotify preflight
 
     @Test
