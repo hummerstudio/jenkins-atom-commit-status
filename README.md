@@ -66,12 +66,11 @@ What the step does around that write is the part worth porting:
 ## 构建与验证
 
 ```bash
-./build.sh
-./tools/smoke.sh            # 15 个场景, 假 API 独立记录并校验每个请求
-python3 tools/mutations.py  # 4 个故意植入的 bug, 每个都必须被对应断言抓住
+mvn verify                  # 打包 + 15 个集成测试 (src/test/java/atom/CommitStatusIT.java)
+python3 tools/mutations.py  # 4 个故意植入的 bug, 每个都必须被对应测试抓住
 ```
 
 `tools/fake-github.py` 是那个假 API: 它按 GitHub 的语义回应 (`/user` 认 token, 仓库/提交 404, 状态回显,
 评论列表), 两种模式让失败路径是真的 -- `--lose-tail` 只存评论前 10 个字符 (接口照样回 201), 账号 `liar`
-回显一个不是我们发的 state. smoke 断言的是**它记下的请求**: 路径 (含解析后的完整 sha), `state`/`context`
-字段, `Bearer` 头, 评论正文, 以及 token 从不进日志.
+回显一个不是我们发的 state. 测试断言的是**它记下的请求** (`received.tsv`): 路径 (含解析后的完整 sha),
+`state`/`context` 字段, `Bearer` 头, 评论正文, 以及 token 从不进日志.

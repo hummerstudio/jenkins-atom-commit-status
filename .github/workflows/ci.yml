@@ -30,11 +30,11 @@ jobs:
       - name: Install the SDK and the build parent
         run: mvn -B -ntp -q -f jenkins-atom-sdk/pom.xml install -DskipTests && mvn -B -ntp -q -f jenkins-atom-sdk/atoms-parent/pom.xml install -N
 
-      # package, then the atom's own smoke script as an integration test
-      - name: Build, package and smoke test
+      # package, then run the atom's integration suite against the jar it produced
+      - name: Build, package and verify
         run: mvn -B -ntp -f atom/pom.xml verify
 
       - uses: actions/upload-artifact@v4
         with:
           name: github-atom
-          path: atom/dist/github/
+          path: atom/target/dist/github/
