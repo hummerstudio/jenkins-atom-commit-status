@@ -6,6 +6,37 @@ Commit status -- port of **github / gitlab-plugin** (198,332) as an atom, plus t
 One atom for GitHub, GitLab and Gitea commit statuses: the three APIs differ only in URL and body shape.
 `UNSTABLE` maps to `failure` on GitHub and `failed` on GitLab.
 
+## 两个动作 (1.2.0)
+
+一个产品, 两个报告接口. GitHub 的提交页上能写两种东西: **commit status** (statuses API, 一行小字加一个链接) 和
+**check run** (checks API, 能带行级注解, 能分批次写入). 所以 1.2.0 把它们合成一个原子, 用 `action` 选:
+
+| action | 接口 | 平台 | 参数组 |
+|---|---|---|---|
+| `status` (默认, 1.1.0 的行为) | `POST /repos/{o}/{r}/statuses/{sha}` | GitHub / GitLab / Gitea | `provider` `state` `contextName` `description` `targetUrl` `verifyStatus` `prNumber` `prComment` |
+| `checks` (从 `github-checks` 原子并入) | `POST/PATCH /repos/{o}/{r}/check-runs` | 只有 GitHub | `name` `status` `conclusion` `title` `summary` `summaryFile` `text` `textFile` `annotationsFile` `detailsUrl` `externalId` `reuseExisting` `verify` `maxMessageSize` |
+
+两组共用的只有身份参数: `account` / `repo` / `sha` / `apiUrl` / `token` / `preflight`. 别的动作不认识的值不猜:
+`action` 写错就是 USER `40001`, 消息里写明 `status / checks` 两个值. `status` 那一路的代码和测试一个字节没动.
+
+## 动作 checks: GitHub check run
+
+`github-checks` 原子 (移植自同名插件, 3,534 installs; 报文规则在同系列的 `checks-api` 里) 原样搬进来:
+
+| 插件 / checks-api 的行为 | 这个动作 |
+|---|---|
+| `ChecksStatus`: NONE/QUEUED -> `queued`, IN_PROGRESS -> `in_progress`, COMPLETED -> `completed` | 同 |
+| `BuildStatusChecksPublisher.getConclusion`: SUCCESS -> success, UNSTABLE -> neutral, FAILURE -> failure, NOT_BUILT -> skipped, ABORTED -> canceled | 同, 但 `ABORTED` 发 `failure` (`GitHubChecksDetails` 把 CANCELED 映成 FAILURE, GitHub 只让自己的 Actions 写 `cancelled`); 要别的就显式填 `conclusion` |
+| `truncateIfNeeded`: 超过 `maxMessageSize` (默认 65535) 时留头加 `... [Output truncated; original size was N characters] ...`, 不切断代理对 | 同 |
+| 回 `Only N characters are allowed; M were supplied` 时 `calculateReducedLimit` 重算上限再发一次 (`max(100, allowed - overshoot - 100)`) | 同, 只重试一次, 日志写明新上限 |
+| 每请求最多 50 条注解, 超出要多次 update, 每次 update **追加** | 同: 首请求 50 条, 其余按 50 一批 PATCH, 顺序保持 |
+| check id 存在 build action 里, 同一构建重发就是 update | `external_id` + `GET /commits/{sha}/check-runs?check_name=` 找回同一个 check; `external_id` 不同就是另一个构建 |
+| `details_url` / `external_id` 缺省用构建 URL / `Run.getExternalizableId()` | 缺省 `BUILD_URL` / `BUILD_TAG` |
+
+checks 动作的错误码 (与 status 动作的编号各自独立, 消息原文照搬 `github-checks`):
+`40001` 参数/组合非法, `40002` 凭据无效或缺失, `40003` 仓库不存在, `40004` 提交不在仓库里, `40005` 注解文件不可用,
+`40006` 接口拒绝写入, `40007` 回读与所发不一致, `40009` 回包不是 check run / 读不回来, `40010` 前置查询失败.
+
 ## What `pipeline-githubnotify-step` actually is (1.1.0)
 
 The plugin is 19 KB and has nothing to do with pull-request comments: `GitHubStatusNotificationStep$Execution.run`
@@ -45,7 +76,7 @@ What the step does around that write is the part worth porting:
 **逐字相同**的评论, 取其 `id` 当输出. GitHub 回 201 / 代理回 200 / 正文被截断被转义吞掉, 都只有回读能发现,
 `40010` 就是为这个准备的. GitLab 的对应接口是 notes 不是 issue comments, 给 `prComment` 会直接 USER `40011`.
 
-## 输入
+## 输入 (action=status)
 
 | 参数 | 说明 |
 |---|---|
@@ -60,15 +91,26 @@ What the step does around that write is the part worth porting:
 | `verifyStatus` | 默认 `true`: 核对回包里的 `state` / `context` |
 | `prNumber` / `prComment` | PR 评论; 正文留空就不发 |
 
-输出: `status` (HTTP 码), `state`, `sha` (实际写状态的 sha), `verified` (回读到的状态), `apiUrl`,
-`commentId` (回读到的评论 id).
+输出 (两个动作共用一个 `output`, 各自写自己那几个): `status` (HTTP 码), `state`, `sha` (实际写状态的 sha),
+`verified` (回读到的状态 / 结论), `apiUrl`, `commentId` (回读到的评论 id); checks 另有 `id`, `name`, `headSha`,
+`conclusion`, `annotations` (发出的条数), `checkUrl`, `annotationsVerified` (回读到的条数).
 
 ## 构建与验证
 
 ```bash
-mvn verify                  # 打包 + 15 个集成测试 (src/test/java/atom/CommitStatusIT.java)
+mvn verify                  # 打包 + 61 个集成测试 (4 个类, 见下)
 python3 tools/mutations.py  # 4 个故意植入的 bug, 每个都必须被对应测试抓住
 ```
+
+| 测试类 | 覆盖 |
+|---|---|
+| `CommitStatusIT` (18) | action=status: 预检, sha 解析, 三种平台的报文, PR 评论回读, 拒绝路径 |
+| `ActionDispatchIT` (4) | `action` 本身: 缺省是 status, `action=status` / `checks` 各自走到哪个接口, 未知动作报 `status / checks` 两个值 |
+| `GithubChecksIT` / `GithubChecksContractIT` / `GithubChecksExtraIT` (39) | action=checks: 报文与回读契约 (`tools/fake-check-api.py`), 每个接口失败的分支, 注解的本地校验 |
+
+`tools/fake-check-api.py` 是 checks 的假 API: 按 REST 文档校验报文 (必需字段, conclusion 与 status 的搭配, 每条注解的
+行/列/级别, **每请求最多 50 条并在每次 update 时追加**), 超长时回 GitHub 的原话; `tools/check.py` 再从原子**自己的输入**
+独立重算一遍 (仓库推断, 结论映射, `${VAR}` 展开, 截断公式, 注解默认值), 与服务端状态、请求日志三方比对.
 
 `tools/fake-github.py` 是那个假 API: 它按 GitHub 的语义回应 (`/user` 认 token, 仓库/提交 404, 状态回显,
 评论列表), 两种模式让失败路径是真的 -- `--lose-tail` 只存评论前 10 个字符 (接口照样回 201), 账号 `liar`

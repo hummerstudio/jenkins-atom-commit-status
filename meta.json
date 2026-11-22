@@ -1,11 +1,13 @@
 {
   "name": "Commit status",
-  "summary": "Posts the build state back to the commit on GitHub, GitLab or Gitea.",
+  "summary": "Posts the build state back to the commit on GitHub, GitLab or Gitea — as a commit status, or as a GitHub check run with line-level annotations.",
   "author": "hummerstudio",
   "license": "MIT",
   "tags": [
     "official-port",
-    "github"
+    "github",
+    "checks-api",
+    "annotations"
   ],
   "homepage": "https://github.com/hummerstudio/jenkins-atom-github"
 }

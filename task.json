@@ -1,28 +1,30 @@
 {
   "atomCode": "github",
   "name": "Commit status",
-  "version": "1.1.0",
-  "description": "Posts the build state back to the commit on GitHub, GitLab or Gitea; on GitHub it does what the githubNotify step does (check credential / repository / commit first, report on the sha the API returns) and can also comment on a pull request.",
+  "version": "1.2.0",
+  "description": "Reports a build back to its commit on GitHub, GitLab or Gitea, through one of two APIs: action=status posts the build state as a commit status (the githubNotify step's behaviour: check credential / repository / commit first, report on the sha the API returns, and optionally comment on a pull request); action=checks publishes a GitHub check run with line-level annotations, in 50-annotation batches, and reads the run and its annotations back.",
   "execution": {
     "packagePath": "github.jar",
     "language": "java",
     "target": "$atom_java_path -cp github.jar com.jenkinschina.atom.sdk.AtomRunner"
   },
   "input": {
-    "provider": {
-      "label": "平台",
+    "action": {
+      "label": "动作",
       "type": "selector",
-      "default": "github",
+      "default": "status",
       "options": [
-        "github",
-        "gitlab",
-        "gitea"
-      ]
+        "status",
+        "checks"
+      ],
+      "required": true,
+      "description": "status = 往提交上写一条状态（statuses API，GitHub / GitLab / Gitea；githubNotify 的行为）；checks = 写一个 GitHub check run，带行级注解（checks API，只有 GitHub）。选哪个，表单只显示哪个动作的参数。"
     },
     "account": {
-      "label": "账号 / 组织（GitHub 必填；repo 写成 owner/name 时可留空）",
+      "label": "账号 / 组织（repo 写成 owner/name 时可留空；checks 动作必填）",
       "type": "vuex-input",
-      "default": ""
+      "default": "",
+      "description": "GitHub / Gitea 的 owner；GitLab 可以只写 repo 的 group/name。留空时从 GIT_URL 推断。"
     },
     "repo": {
       "label": "仓库名（或 owner/name；留空取 GIT_URL）",
@@ -30,32 +32,12 @@
       "default": ""
     },
     "sha": {
-      "label": "提交 sha（留空取 GIT_COMMIT）",
-      "type": "vuex-input",
-      "default": ""
-    },
-    "state": {
-      "label": "状态（留空按 BUILD_STATUS 推断）",
-      "type": "vuex-input",
-      "default": ""
-    },
-    "contextName": {
-      "label": "状态名",
-      "type": "vuex-input",
-      "default": "jenkins/atom"
-    },
-    "description": {
-      "label": "描述（留空自动生成）",
-      "type": "vuex-input",
-      "default": ""
-    },
-    "targetUrl": {
-      "label": "详情链接（留空取 BUILD_URL）",
+      "label": "提交 sha（留空取 GIT_COMMIT；短 sha 由接口解析成完整 sha）",
       "type": "vuex-input",
       "default": ""
     },
     "apiUrl": {
-      "label": "API 地址（gitea 必填）",
+      "label": "API 地址（gitea 必填；GitHub / checks 默认 https://api.github.com，GHE 填根地址）",
       "type": "vuex-input",
       "default": ""
     },
@@ -70,46 +52,311 @@
       "type": "boolean",
       "default": "true"
     },
+    "provider": {
+      "label": "平台",
+      "type": "selector",
+      "default": "github",
+      "options": [
+        "github",
+        "gitlab",
+        "gitea"
+      ],
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
+    },
+    "state": {
+      "label": "状态（留空按 BUILD_STATUS 推断）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
+    },
+    "contextName": {
+      "label": "状态名",
+      "type": "vuex-input",
+      "default": "jenkins/atom",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
+    },
+    "description": {
+      "label": "描述（留空自动生成）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
+    },
+    "targetUrl": {
+      "label": "详情链接（留空取 BUILD_URL）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
+    },
     "verifyStatus": {
       "label": "核对接口回显的状态（不是看状态码）",
       "type": "boolean",
-      "default": "true"
+      "default": "true",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
     },
     "prNumber": {
       "label": "PR 编号（留空取 CHANGE_ID）",
       "type": "vuex-input",
-      "default": ""
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
     },
     "prComment": {
       "label": "PR 评论正文（可选，支持 ${VAR}；插件没有这个功能）",
       "type": "vuex-input",
-      "default": ""
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "status"}
+        ]
+      }
+    },
+    "name": {
+      "label": "检查名（留空取 JOB_NAME，再不行 jenkins/atom；支持 ${VAR}）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "status": {
+      "label": "检查状态",
+      "type": "selector",
+      "default": "completed",
+      "options": [
+        "queued",
+        "in_progress",
+        "completed"
+      ],
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "conclusion": {
+      "label": "结论（留空按 BUILD_STATUS 推断；只在 completed 时有效）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "title": {
+      "label": "输出标题（留空按构建结果生成）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "summary": {
+      "label": "摘要（留空自动生成；支持 ${VAR}）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "summaryFile": {
+      "label": "摘要文件（相对工作区；填了就用它）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "text": {
+      "label": "详情正文（Markdown；支持 ${VAR}）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "textFile": {
+      "label": "详情正文文件（相对工作区，比如测试报告）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "annotationsFile": {
+      "label": "注解文件（JSON 数组，路径相对工作区）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "detailsUrl": {
+      "label": "检查详情链接（留空取 BUILD_URL）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "externalId": {
+      "label": "external_id（留空取 BUILD_TAG；同名检查按它区分是不是同一次构建）",
+      "type": "vuex-input",
+      "default": "",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "reuseExisting": {
+      "label": "同名检查在同一提交上就更新，不再建一个",
+      "type": "boolean",
+      "default": "true",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "verify": {
+      "label": "写完回读检查与注解（不是看状态码）",
+      "type": "boolean",
+      "default": "true",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
+    },
+    "maxMessageSize": {
+      "label": "摘要/正文上限（字符，插件默认 65535）",
+      "type": "vuex-input",
+      "default": "65535",
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {"key": "action", "value": "checks"}
+        ]
+      }
     }
   },
   "output": {
     "status": {
       "type": "string",
-      "description": "HTTP 状态码"
+      "description": "HTTP 状态码（status = 写状态那次；checks = 创建/更新检查那次）"
     },
     "state": {
       "type": "string",
-      "description": "映射后的状态"
+      "description": "status 动作：映射后的状态"
     },
     "sha": {
       "type": "string",
-      "description": "实际写状态的提交 sha（可能是接口给出的完整 sha）"
+      "description": "status 动作：实际写状态的提交 sha（可能是接口给出的完整 sha）"
+    },
+    "id": {
+      "type": "string",
+      "description": "checks 动作：检查运行 id"
+    },
+    "name": {
+      "type": "string",
+      "description": "checks 动作：检查名"
+    },
+    "headSha": {
+      "type": "string",
+      "description": "checks 动作：实际挂到的提交 sha"
+    },
+    "conclusion": {
+      "type": "string",
+      "description": "checks 动作：结论；未完成时为 none"
+    },
+    "annotations": {
+      "type": "string",
+      "description": "checks 动作：发出的注解条数"
+    },
+    "checkUrl": {
+      "type": "string",
+      "description": "checks 动作：详情链接"
+    },
+    "annotationsVerified": {
+      "type": "string",
+      "description": "checks 动作：回读到的注解条数"
     },
     "verified": {
       "type": "string",
-      "description": "接口回显的状态；未开启校验为 not-checked"
+      "description": "回读到的东西：status 是接口回显的状态，checks 是回读到的结论/状态；未开启校验为 not-checked"
     },
     "apiUrl": {
       "type": "string",
-      "description": "实际调用的地址"
+      "description": "status：实际调用的地址；checks：检查运行的对象地址"
     },
     "commentId": {
       "type": "string",
-      "description": "回读到的 PR 评论 id"
+      "description": "status 动作：回读到的 PR 评论 id"
     }
   },
   "x-jenkins": {

@@ -25,6 +25,11 @@ import java.util.regex.Pattern;
  * <p>One atom instead of three plugins: the three APIs differ in the URL and the body shape, nothing else.
  * The token is a credential, so it never appears in the job form or in the log.
  *
+ * <p>1.2.0 is one {@code github} atom with two reporting APIs behind an {@code action}. {@code status} (the default,
+ * and everything in the rest of this class) writes one commit status through the statuses API; {@code checks} writes a
+ * check run with line-level annotations through the checks API and lives in {@link GitHubChecksAction} — the
+ * {@code github-checks} atom, unchanged, reached through the same account / apiUrl / token / repo / commit.
+ *
  * <p>1.1.0 ports what {@code pipeline-githubnotify-step} actually does (the {@code githubNotify} step): it addresses
  * the repository by {@code account} + {@code repo}, it checks the credential, the repository and the commit before
  * it writes anything, and it writes the status on the <em>commit sha the API returned</em>, not on the string it was
@@ -32,10 +37,26 @@ import java.util.regex.Pattern;
  */
 public class GithubAtom implements AtomTask {
 
+    /** {@code status} writes the one status the build produced; {@code checks} is a GitHub check run (see below). */
+    static final List<String> ACTIONS = List.of("status", "checks");
+
     private static final Pattern VAR = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_.]*)}");
 
     @Override
     public AtomResult run(AtomContext context) throws Exception {
+        String action = context.getParam("action", "status").trim().toLowerCase(Locale.ROOT);
+        if (action.isEmpty()) {
+            action = "status";
+        }
+        if (!ACTIONS.contains(action)) {
+            return AtomResult.error(ErrorType.USER, 40001,
+                    "action '" + action + "' is not one of " + String.join(" / ", ACTIONS));
+        }
+        if ("checks".equals(action)) {
+            // A check run is a different API from a commit status: separate payload, separate codes, separate outputs.
+            return new GitHubChecksAction().run(context);
+        }
+
         String provider = context.getParam("provider", "github").trim().toLowerCase(Locale.ROOT);
         String apiUrl = context.getParam("apiUrl", defaultApi(provider)).trim().replaceAll("/+$", "");
         if (apiUrl.isBlank()) {

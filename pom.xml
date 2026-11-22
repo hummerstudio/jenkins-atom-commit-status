@@ -13,6 +13,6 @@
 
   <artifactId>github</artifactId>
   <name>Commit status</name>
-  <description>Posts the build state back to the commit on GitHub, GitLab or Gitea; on GitHub it does what the githubNotify step does (check credential / repository / commit first, report on the sha the API returns) and can also comment on a pull request.</description>
+  <description>Reports a build back to its commit on GitHub, GitLab or Gitea, through one of two APIs: action=status posts the build state as a commit status (the githubNotify step's behaviour: check credential / repository / commit first, report on the sha the API returns, and optionally comment on a pull request); action=checks publishes a GitHub check run with line-level annotations, in 50-annotation batches, and reads the run and its annotations back.</description>
 
 </project>
