@@ -64,7 +64,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -75,7 +78,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -86,7 +92,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -97,7 +106,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -108,7 +120,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -119,7 +134,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -130,7 +148,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -141,7 +162,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "status"}
+          {
+            "key": "action",
+            "value": "status"
+          }
         ]
       }
     },
@@ -152,7 +176,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -168,7 +195,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -179,7 +209,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -190,7 +223,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -201,7 +237,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -212,7 +251,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -223,7 +265,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -234,7 +279,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -245,7 +293,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -256,7 +307,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -267,7 +321,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -278,7 +335,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -289,7 +349,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     },
@@ -300,7 +363,10 @@
       "rely": {
         "operation": "AND",
         "expression": [
-          {"key": "action", "value": "checks"}
+          {
+            "key": "action",
+            "value": "checks"
+          }
         ]
       }
     }
@@ -366,6 +432,7 @@
     },
     "secrets": {
       "token": ""
-    }
+    },
+    "category": "scm"
   }
 }
